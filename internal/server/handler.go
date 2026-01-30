@@ -13,10 +13,10 @@ type HandlerError struct {
 
 func NewHandlerError(w io.Writer, err HandlerError) {
 	response.WriteStatusLine(w, err.Code)
-	headers := response.GetDefaultHeaders(len(err.Message))
+	headers := response.GetDefaultHeaders(len(err.Message), "text/plain")
 	response.WriteHeaders(w, headers)
 	w.Write([]byte(err.Message))
 
 }
 
-type Handler func(w io.Writer, req *request.Request) *HandlerError
+type Handler func(w *response.Writer, req *request.Request)

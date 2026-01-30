@@ -6,11 +6,20 @@ import (
 	"strconv"
 )
 
+type Writer struct {
+	io.Writer
+}
+
+func NewWriter(w io.Writer) *Writer {
+	return &Writer{w}
+}
+
 type StatusCode int
 
 const (
 	OK                    StatusCode = 200
 	BAD_REQUEST           StatusCode = 400
+	NOT_FOUND             StatusCode = 404
 	INTERNAL_SERVER_ERROR StatusCode = 500
 )
 
@@ -24,6 +33,12 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
 		return nil
 	case BAD_REQUEST:
 		_, err := w.Write([]byte("HTTP/1.1 400 Bad Request\r\n"))
+		if err != nil {
+			return err
+		}
+		return nil
+	case NOT_FOUND:
+		_, err := w.Write([]byte("HTTP/1.1 404 Not Found\r\n"))
 		if err != nil {
 			return err
 		}
@@ -43,10 +58,10 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
 	}
 }
 
-func GetDefaultHeaders(contentLen int) headers.Headers {
+func GetDefaultHeaders(contentLen int, contentType string) headers.Headers {
 	return headers.Headers{
 		"Content-Length": strconv.Itoa(contentLen),
-		"Content-Type":   "text/plain",
+		"Content-Type":   contentType,
 		"Connection":     "close",
 	}
 }
@@ -63,4 +78,20 @@ func WriteHeaders(w io.Writer, headers headers.Headers) error {
 		return err
 	}
 	return nil
+}
+
+func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
+	return WriteStatusLine(w, statusCode)
+}
+
+func (w *Writer) WriteHeaders(headers headers.Headers) error {
+	return WriteHeaders(w, headers)
+}
+
+func (w *Writer) WriteBody(body []byte) (int, error) {
+	n, err := w.Write(body)
+	if err != nil {
+		return n, err
+	}
+	return n, nil
 }
