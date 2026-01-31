@@ -58,10 +58,10 @@ func WriteStatusLine(w io.Writer, statusCode StatusCode) error {
 	}
 }
 
-func GetDefaultHeaders(contentLen int, contentType string) headers.Headers {
+func GetDefaultHeaders(contentLen int) headers.Headers {
 	return headers.Headers{
 		"Content-Length": strconv.Itoa(contentLen),
-		"Content-Type":   contentType,
+		"Content-Type":   "text/plain",
 		"Connection":     "close",
 	}
 }
@@ -94,4 +94,18 @@ func (w *Writer) WriteBody(body []byte) (int, error) {
 		return n, err
 	}
 	return n, nil
+}
+
+func (w *Writer) WriteTrailers(h headers.Headers) error {
+	for key, value := range h {
+		_, err := w.Write([]byte(key + ": " + value + "\r\n"))
+		if err != nil {
+			return err
+		}
+	}
+	_, err := w.Write([]byte("\r\n"))
+	if err != nil {
+		return err
+	}
+	return nil
 }
